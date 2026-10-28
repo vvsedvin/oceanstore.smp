@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OceanStore</title>
+<style>
+  :root {
+    --bg: #03101f;
+    --panel: rgba(7, 22, 42, 0.88);
+    --text: #eaf6ff;
+    --muted: #93b4cf;
+    --line: rgba(120, 190, 255, 0.18);
+    --accent: #1e9bff;
+    --gold: #ffd166;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; }
+  .container { max-width: 1240px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 2; }
+
+  /* Background */
+  .page-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    background:
+      radial-gradient(circle at 80% 0%, rgba(30,155,255,0.22), transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(0,200,180,0.12), transparent 45%),
+      linear-gradient(180deg, #06223f, #03101f 60%); }
+  .bubble { position: absolute; bottom: -40px; border-radius: 50%; border: 1px solid rgba(170,220,255,0.4);
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent 70%);
+    animation: rise linear infinite; }
+  @keyframes rise { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 0.8; } 100% { transform: translateY(-110vh); opacity: 0; } }
+
+  /* Nav */
+  nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 0;
+    position: sticky; top: 0; z-index: 20; background: rgba(3,16,31,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.4rem; }
+  .logo b { color: var(--accent); }
+  nav ul { display: flex; gap: 30px; list-style: none; font-size: 0.95rem; }
+  nav ul a { display: flex; align-items: center; gap: 8px; opacity: 0.9; padding-bottom: 4px; }
+  nav ul a:hover { color: var(--accent); }
+  nav ul a.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .discord-btn { border: 1px solid #5865f2; background: rgba(88,101,242,0.15); padding: 9px 16px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 380px; position: relative; overflow: hidden;
+    background: linear-gradient(90deg, #03101f 0%, rgba(3,16,31,0.6) 45%, rgba(10,70,120,0.6) 100%); border-bottom: 1px solid var(--line); }
+  .hero-text { padding: 56px 0 56px 24px; position: relative; z-index: 2; }
+  .hero-art { position: relative; overflow: hidden; }
+  .hero-art::before { content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 60% 40%, rgba(47,168,255,0.45), transparent 55%),
+      radial-gradient(circle at 20% 80%, rgba(65,224,255,0.25), transparent 50%),
+      linear-gradient(120deg, #0b3d6b 0%, #12557f 40%, #0c5a6e 70%, #3b1f6b 100%); }
+  .hero-art::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 45%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 46px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 46px),
+      linear-gradient(180deg, transparent, rgba(3,16,31,0.7));
+    transform: perspective(400px) rotateX(55deg); transform-origin: bottom; opacity: 0.8; }
+  .hero-art .note { position: absolute; right: 30px; top: 40px; font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.6rem; color: #bfe7ff; text-align: right; transform: rotate(-4deg); z-index: 2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .eyebrow { color: #7cc4ff; font-size: 0.8rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+  .hero h1 { font-size: clamp(3rem, 7vw, 5.2rem); font-weight: 900; line-height: 1; margin: 12px 0; letter-spacing: -1px; }
+  .hero h1 .w { background: linear-gradient(90deg, #ffffff, #bfe7ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero h1 .s { background: linear-gradient(90deg, #1e9bff, #41e0ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--muted); max-width: 500px; font-size: 1.05rem; }
+  .chips { display: flex; gap: 24px; margin: 24px 0 28px; flex-wrap: wrap; }
+  .chip { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; }
+  .chip i { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(30,155,255,0.15); border: 1px solid var(--line); font-style: normal; color: var(--accent); }
+  .btn { display: inline-block; padding: 14px 28px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; font-size: 0.95rem; transition: transform 0.15s, box-shadow 0.15s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: linear-gradient(90deg, #1e9bff, #0a6bd1); color: #fff; box-shadow: 0 12px 30px rgba(30,155,255,0.35); }
+  .btn-sm { padding: 10px 14px; font-size: 0.85rem; border-radius: 10px; }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+
+  /* Sections */
+  section { padding: 40px 0; position: relative; z-index: 2; }
+  .heading { font-size: 1.7rem; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
+  .heading .crown { color: var(--accent); font-size: 1.3rem; }
+  .sub { color: var(--muted); margin-bottom: 24px; }
+
+  /* Rank cards */
+  .ranks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 1000px) { .ranks { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .ranks { grid-template-columns: 1fr; } }
+  .rank { position: relative; border-radius: 14px; padding: 20px; background: var(--panel); border: 1px solid var(--c); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s; }
+  .rank::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 85% 20%, var(--glow), transparent 55%); pointer-events: none; }
+  .rank > * { position: relative; }
+  .rank:hover { transform: translateY(-4px); }
+  .rank-head { display: flex; align-items: center; gap: 14px; }
+  .rank-head .ic { width: 56px; height: 56px; flex: none; }
+  .rank h3 { font-size: 1.6rem; font-weight: 900; letter-spacing: 0.5px; color: var(--c); line-height: 1; }
+  .rank .best { display: inline-block; margin-top: 6px; background: var(--gold); color: #03101f; font-size: 0.65rem; font-weight: 800; padding: 3px 9px; border-radius: 6px; letter-spacing: 1px; }
+  .rank .price { font-size: 1.9rem; font-weight: 900; margin: 14px 0 2px; }
+  .rank .price small { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+  .rank ul { list-style: none; margin: 12px 0 14px; font-size: 0.9rem; flex: 1; }
+  .rank li { padding: 5px 0; display: flex; gap: 8px; }
+  .rank li::before { content: "✓"; color: var(--c); font-weight: 800; }
+  .rank .life { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; margin-bottom: 12px; }
+  .rank .life b { color: var(--text); }
+  .rank button { width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: 800; color: #03101f; background: var(--c); }
+  .rank.best { box-shadow: 0 0 30px rgba(255,209,102,0.15); }
+
+  /* Panels */
+  .grid3 { display: grid; grid-template-columns: 1fr 1.1fr 1.3fr; gap: 16px; }
+  @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .panel h4 { font-size: 1.05rem; font-weight: 800; margin-bottom: 4px; color: #7cc4ff; letter-spacing: 0.5px; text-transform: uppercase; }
+  .panel .hint { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
+  .pay-card { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,0.25); margin-bottom: 10px; }
+  .coin { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(145deg, #5a8dff, #1d3a86); display: grid; place-items: center; font-weight: 900; flex: none; }
+  .coin.ltc { background: linear-gradient(145deg, #b8c4d6, #6d7b92); }
+  .tip { background: rgba(30,155,255,0.1); border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-size: 0.85rem; margin-bottom: 14px; }
+  .tip strong { color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  td { padding: 7px 0; border-bottom: 1px solid var(--line); }
+  td:last-child { text-align: right; font-weight: 700; }
+  .steps { display: grid; gap: 14px; }
+  .step { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+  .step .n { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 0.95rem; }
+  .step strong { display: block; font-size: 0.95rem; }
+  .step span { color: var(--muted); font-size: 0.85rem; }
+
+  /* Checkout */
+  .checkout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .checkout { grid-template-columns: 1fr; } }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin: 12px 0 6px; }
+  select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: #03101f; color: var(--text); font-size: 0.95rem; font-family: inherit; }
+  .dur { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .dur button { padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; font-weight: 700; }
+  .dur button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .total { font-size: 1.9rem; font-weight: 900; margin-top: 16px; }
+  .total small { font-size: 0.9rem; color: var(--muted); font-weight: 500; }
+  .ltc-line { font-family: ui-monospace, Menlo, Consolas, monospace; color: #9fd0ff; margin-top: 4px; font-size: 0.9rem; }
+  .addr { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; word-break: break-all; background: #03101f; border: 1px dashed var(--line); padding: 12px; border-radius: 10px; margin: 10px 0; }
+  .qr { display: block; width: 180px; height: 180px; background: #fff; padding: 8px; border-radius: 12px; margin: 12px auto 0; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .status { font-size: 0.85rem; color: var(--muted); margin-top: 10px; min-height: 1.2em; }
+  .notice { margin-top: 14px; font-size: 0.85rem; color: var(--gold); background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.35); border-radius: 10px; padding: 12px; }
+
+  /* Banner + footer */
+  .banner { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; background: linear-gradient(120deg, #0a3a6e, #03101f); border: 1px solid var(--line); border-radius: 14px; padding: 24px 28px; }
+  .banner h5 { font-size: 1.15rem; font-weight: 900; letter-spacing: 0.5px; }
+  .banner p { color: var(--muted); font-size: 0.9rem; }
+  .banner .script { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.5rem; color: #bfe7ff; text-align: right; }
+  footer { border-top: 1px solid var(--line); padding: 26px 0 40px; position: relative; z-index: 2; background: rgba(3,16,31,0.9); }
+  footer .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  footer ul { display: flex; gap: 26px; list-style: none; font-size: 0.9rem; color: var(--muted); }
+  footer small { color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<div class="page-bg" id="page-bg"></div>
+
+<div class="container">
+  <nav>
+    <a class="logo" href="#top">
+      <svg width="36" height="36" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 24c4-6 8-6 12 0s8 6 12 0 6-4 10-2v8H3z" fill="#1e9bff"/><path d="M3 16c4-6 8-6 12 0s8 6 12 0 6-4 10-2" fill="none" stroke="#7cc4ff" stroke-width="2"/></svg>
+      <span>OCEAN<b>STORE</b></span>
+    </a>
+    <ul>
+      <li><a class="active" href="#top">🏠 Home</a></li>
+      <li><a href="#ranks">👑 Ranks</a></li>
+      <li><a href="#how">🛒 How to Buy</a></li>
+      <li><a href="#faq">❓ FAQ</a></li>
+    </ul>
+    <a class="discord-btn" href="https://discord.gg/HeSB76pJdq" target="_blank" rel="noopener">🎮 Join Discord</a>
+  </nav>
+</div>
+
+<header class="hero" id="top">
+  <div class="hero-text">
+    <div class="container" style="padding:0">
+      <div class="eyebrow">The official server store</div>
+      <h1><span class="w">OCEAN</span><span class="s">STORE</span></h1>
+      <p>Get exclusive ranks, kits, and perks to enhance your SMP experience!</p>
+      <div class="chips">
+        <div class="chip"><i>◆</i> Exclusive<br>Kits</div>
+        <div class="chip"><i>🛡</i> Better<br>Gear</div>
+        <div class="chip"><i>★</i> Awesome<br>Perks</div>
+        <div class="chip"><i>♥</i> Support<br>the Server</div>
+      </div>
+      <a class="btn btn-primary" href="#ranks">View Ranks →</a>
+    </div>
+  </div>
+  <div class="hero-art">
+    <div class="note">Bigger Ranks.<br>Better Experience.<br>Same Ocean.</div>
+  </div>
+</header>
+
+<section id="ranks">
+  <div class="container">
+    <div class="heading"><span class="crown">♛</span> Available Ranks</div>
+    <p class="sub">Choose your rank and unlock exclusive kits, better gear, and amazing perks! Each rank includes everything below it.</p>
+    <div class="ranks" id="rank-cards"></div>
+
+    <div class="heading" style="margin-top:50px"><span class="crown">✦</span> Crates & Money</div>
+    <p class="sub">One-time purchases. Prices in euro.</p>
+    <div class="ranks">
+      <div class="rank" style="--c:#ffb020; --glow:rgba(255,176,32,0.3)">
+        <div class="rank-head"><div><h3>OCEAN CRATE</h3></div></div>
+        <div class="price">€0.50 <small>one-time</small></div>
+        <ul><li>Ocean crate for your SMP</li></ul>
+        <button onclick="buyItem('crate-ocean')">Get Ocean Crate →</button>
+      </div>
+      <div class="rank" style="--c:#41e0ff; --glow:rgba(65,224,255,0.25)">
+        <div class="rank-head"><div><h3>1M MONEY</h3></div></div>
+        <div class="price">€0.10 <small>one-time</small></div>
+        <ul><li>1,000,000 in-game money</li></ul>
+        <button onclick="buyItem('money-1m')">Get 1M Money →</button>
+      </div>
+      <div class="rank" style="--c:#41e0ff; --glow:rgba(65,224,255,0.25)">
+        <div class="rank-head"><div><h3>10M MONEY</h3></div></div>
+        <div class="price">€0.20 <small>one-time</small></div>
+        <ul><li>10,000,000 in-game money</li></ul>
+        <button onclick="buyItem('money-10m')">Get 10M Money →</button>
+      </div>
+      <div class="rank" style="--c:#41e0ff; --glow:rgba(65,224,255,0.25)">
+        <div class="rank-head"><div><h3>50M MONEY</h3></div></div>
+        <div class="price">€1.00 <small>one-time</small></div>
+        <ul><li>50,000,000 in-game money</li></ul>
+        <button onclick="buyItem('money-50m')">Get 50M Money →</button>
+      </div>
+      <div class="rank" style="--c:#41e0ff; --glow:rgba(65,224,255,0.25)">
+        <div class="rank-head"><div><h3>100M MONEY</h3></div></div>
+        <div class="price">€2.00 <small>one-time</small></div>
+        <ul><li>100,000,000 in-game money</li></ul>
+        <button onclick="buyItem('money-100m')">Get 100M Money →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:10px">
+  <div class="container grid3">
+    <div class="panel">
+      <h4>Payment methods</h4>
+      <div class="hint">We currently accept:</div>
+      <div class="pay-card">
+        <div class="coin ltc">Ł</div>
+        <div><strong>Litecoin (LTC)</strong><div class="hint" style="margin:2px 0 0">Only accepted method</div></div>
+      </div>
+      <div class="ltc-line" id="pay-amount" style="margin-top:10px"></div>
+      <div class="addr" id="pay-address" style="font-size:0.75rem"></div>
+      <div class="row">
+        <button class="btn btn-sm btn-primary" onclick="copyText(LTC_ADDRESS, 'Address copied.')">Copy LTC address</button>
+      </div>
+      <p class="hint" style="margin:12px 0 0">Crypto payments only. No PayPal or other payment methods are currently available.</p>
+    </div>
+
+    <div class="panel">
+      <h4>Rank duration & lifetime</h4>
+      <div class="hint">All prices are for <strong>1 month</strong> of rank access.</div>
+      <div class="tip"><strong>Want to keep your rank forever?</strong><br>Add just <strong>+$0.50</strong> to your monthly price for a lifetime rank.</div>
+      <table id="lifetime-table"></table>
+    </div>
+
+    <div class="panel" id="how">
+      <h4>How to buy</h4>
+      <div class="hint">Simple, secure, straightforward.</div>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div><strong>Open a ticket</strong><span>In our Discord server, tell us which rank and duration you want.</span></div></div>
+        <div class="step"><div class="n">2</div><div><strong>Get the payment details</strong><span>Our team sends the LTC address and exact amount.</span></div></div>
+        <div class="step"><div class="n">3</div><div><strong>Send payment and TXID</strong><span>Post the transaction ID in your ticket.</span></div></div>
+        <div class="step"><div class="n">4</div><div><strong>Rank added</strong><span>We check the transaction on the blockchain and add your rank.</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="checkout" style="padding-top:0">
+  <div class="container">
+    <div class="heading">Checkout</div>
+    <p class="sub">Pay with Litecoin. Payments are final and non-refundable.</p>
+    <div class="checkout">
+      <div class="panel">
+        <h4>1. Your order</h4>
+        <label for="rank">Rank</label>
+        <select id="rank" onchange="update()">
+          <option value="0">Tidal: $0.50 / $1.00</option>
+          <option value="1">Reef: $1.00 / $1.50</option>
+          <option value="2">Coral: $1.50 / $2.00</option>
+          <option value="3" selected>Ocean: $2.00 / $2.50 (BEST)</option>
+          <optgroup label="Crates & money">
+            <option value="crate-ocean">Ocean Crate: €0.50</option>
+            <option value="money-1m">1M in-game money: €0.10</option>
+            <option value="money-10m">10M in-game money: €0.20</option>
+            <option value="money-50m">50M in-game money: €1.00</option>
+            <option value="money-100m">100M in-game money: €2.00</option>
+          </optgroup>
+        </select>
+        <label>Duration</label>
+        <div class="dur">
+          <button id="dur-monthly" class="active" onclick="setDuration('monthly')">1 Month</button>
+          <button id="dur-lifetime" onclick="setDuration('lifetime')">Lifetime</button>
+        </div>
+        <label for="ign">Minecraft username</label>
+        <input id="ign" maxlength="16" placeholder="Your in-game name" oninput="update()">
+        <div class="total" id="total"></div>
+        <div class="ltc-line" id="ltc-line"></div>
+      </div>
+
+      <div class="panel">
+        <h4>2. Send payment</h4>
+        <div class="addr" id="address"></div>
+        <div class="row">
+          <button class="btn btn-sm btn-primary" onclick="copyText(LTC_ADDRESS, 'Address copied.')">Copy address</button>
+          <button class="btn btn-sm btn-ghost" onclick="copyText(currentLtc(), 'Amount copied.')">Copy amount</button>
+        </div>
+        <img class="qr" id="qr" alt="Litecoin payment QR code">
+
+        <h4 style="margin-top:20px">3. Confirm</h4>
+        <label for="txid">Transaction ID (TXID)</label>
+        <input id="txid" placeholder="Paste the TXID from your wallet" oninput="update()">
+        <div class="row">
+          <button class="btn btn-sm btn-primary" onclick="copyOrder()">Copy order message</button>
+          <a class="btn btn-sm btn-ghost" href="https://discord.gg/HeSB76pJdq" target="_blank" rel="noopener">Open ticket</a>
+        </div>
+        <div class="status" id="status"></div>
+        <div class="notice">This page does not confirm payments by itself. Paste the order message into a Discord ticket. Our team checks the transaction and adds your rank.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="container">
+    <div class="banner">
+      <div style="display:flex;gap:16px;align-items:center">
+        <div style="font-size:2rem;color:#41e0ff">♥</div>
+        <div>
+          <h5>THANK YOU FOR SUPPORTING OUR SERVER!</h5>
+          <p>Every purchase helps us improve the SMP and bring you more exciting updates.</p>
+        </div>
+      </div>
+      <div class="script">Choose your rank, upgrade your experience,<br>and enjoy the grind!</div>
+    </div>
+  </div>
+</section>
+
+<footer id="faq">
+  <div class="container">
+    <a class="logo" href="#top">
+      <svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 24c4-6 8-6 12 0s8 6 12 0 6-4 10-2v8H3z" fill="#1e9bff"/></svg>
+      <span>OCEAN<b>STORE</b></span>
+    </a>
+    <ul>
+      <li><a href="#top">Home</a></li>
+      <li><a href="#ranks">Ranks</a></li>
+      <li><a href="#how">How to Buy</a></li>
+      <li><a href="https://discord.gg/HeSB76pJdq" target="_blank" rel="noopener">Report a bug</a></li>
+    </ul>
+    <small>© 2026 OceanSMP. All rights reserved.</small>
+  </div>
+</footer>
+
+<script>
+  // ===== CONFIG: edit before publishing =====
+  const LTC_ADDRESS = "LSKWR256CDY6sddUMnwmFyXyfrzk5RjUrG";
+  const LTC_USD_PRICE = 80.00; // Update to the current LTC price in USD
+  const EUR_TO_USD = 1.0; // Set to the current EUR to USD rate. Converts the euro crate and money prices for the LTC amount.
+  // ==========================================
+
+  // Card order (Ocean first) and checkout dropdown order (Tidal first) differ, so PRICES is keyed by dropdown index
+  const RANKS = [
+    { name: "Ocean", color: "#2fa8ff", glow: "rgba(47,168,255,0.35)", best: true, dropdown: 3,
+      monthly: 2.00, lifetime: 2.50, perks: ["Access to all kits", "Includes every lower-rank kit", "The ultimate rank for our SMP"],
+      icon: `<svg viewBox="0 0 48 48" class="ic"><path d="M4 30c5-7 9-7 14 0s9 7 14 0 9-7 12 0v10H4z" fill="#2fa8ff"/><path d="M4 22c5-7 9-7 14 0s9 7 14 0 9-7 12 0" fill="none" stroke="#9fd8ff" stroke-width="2.5"/></svg>` },
+    { name: "Reef", color: "#2fe0b0", glow: "rgba(47,224,176,0.3)", dropdown: 1,
+      monthly: 1.00, lifetime: 1.50, perks: ["Access to the MVP Kit", "Includes all lower-rank kits", "More value for your money!"],
+      icon: `<svg viewBox="0 0 48 48" class="ic"><path d="M24 44V22M24 30l-8-8M24 26l9-9M24 22l-5-7M24 22l6-6" stroke="#2fe0b0" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>` },
+    { name: "Coral", color: "#c04dff", glow: "rgba(192,77,255,0.35)", dropdown: 2,
+      monthly: 1.50, lifetime: 2.00, perks: ["Access to the Legend Kit", "Includes all lower-rank kits", "Exclusive rewards and perks"],
+      icon: `<svg viewBox="0 0 48 48" class="ic"><path d="M10 38V18l6 4 4-8 4 6 4-6 4 8 6-4v20z" fill="#c04dff"/></svg>` },
+    { name: "Tidal", color: "#4ab8ff", glow: "rgba(74,184,255,0.3)", dropdown: 0,
+      monthly: 0.50, lifetime: 1.00, perks: ["Access to the VIP Kit", "Includes all lower-rank kits"],
+      icon: `<svg viewBox="0 0 48 48" class="ic"><path d="M4 30c8-14 18-14 26 0 4-6 8-6 14 0" fill="none" stroke="#4ab8ff" stroke-width="4" stroke-linecap="round"/><path d="M4 40c8-10 18-10 26 0" fill="none" stroke="#4ab8ff" stroke-width="3" stroke-linecap="round" opacity="0.6"/></svg>` }
+  ];
+
+  const PRICES = {
+    "0": [0.50, 1.00], "1": [1.00, 1.50], "2": [1.50, 2.00], "3": [2.00, 2.50],
+    "crate-ocean": [0.50 * EUR_TO_USD, 0.50 * EUR_TO_USD],
+    "money-1m": [0.10 * EUR_TO_USD, 0.10 * EUR_TO_USD],
+    "money-10m": [0.20 * EUR_TO_USD, 0.20 * EUR_TO_USD],
+    "money-50m": [1.00 * EUR_TO_USD, 1.00 * EUR_TO_USD],
+    "money-100m": [2.00 * EUR_TO_USD, 2.00 * EUR_TO_USD]
+  };
+  const ITEM_NAMES = { "0": "Tidal", "1": "Reef", "2": "Coral", "3": "Ocean", "crate-ocean": "Ocean Crate", "money-1m": "1M money", "money-10m": "10M money", "money-50m": "50M money", "money-100m": "100M money" };
+  const ONE_OFF = v => v.startsWith("crate") || v.startsWith("money");
+
+  function money() {
+    const v = document.getElementById("rank").value;
+    const usd = currentUsd();
+    return ONE_OFF(v) ? `€${(usd / EUR_TO_USD).toFixed(2)}` : `$${usd.toFixed(2)}`;
+  }
+
+  function priceSuffix() {
+    const v = document.getElementById("rank").value;
+    return ONE_OFF(v) ? "one-time" : (duration === "monthly" ? "/ 1 month" : "lifetime");
+  }
+
+  function buyItem(v) {
+    document.getElementById("rank").value = v;
+    update();
+    document.getElementById("checkout").scrollIntoView();
+  }
+
+  function renderRanks() {
+    document.getElementById("rank-cards").innerHTML = RANKS.map((r, i) => `
+      <div class="rank ${r.best ? "best" : ""}" style="--c:${r.color}; --glow:${r.glow || "rgba(255,255,255,0.1)"}">
+        <div class="rank-head">
+          ${r.icon}
+          <div><h3>${r.name.toUpperCase()}</h3>${r.best ? '<span class="best">BEST RANK!</span>' : ""}</div>
+        </div>
+        <div class="price">$${r.monthly.toFixed(2)} <small>/ 1 Month</small></div>
+        <ul>${r.perks.map(p => `<li>${p}</li>`).join("")}</ul>
+        <div class="life">Lifetime: <b>$${r.lifetime.toFixed(2)}</b> <span>(+$0.50)</span></div>
+        <button onclick="buy(${i},'monthly')">Get ${r.name} →</button>
+      </div>`).join("");
+
+    document.getElementById("lifetime-table").innerHTML = RANKS.map(r =>
+      `<tr><td>${r.name}</td><td>$${r.lifetime.toFixed(2)}</td></tr>`).join("");
+  }
+
+  let duration = "monthly";
+
+  function buy(cardIndex, dur) {
+    document.getElementById("rank").value = String(RANKS[cardIndex].dropdown);
+    setDuration(dur);
+    document.getElementById("checkout").scrollIntoView();
+  }
+
+  function setDuration(d) {
+    duration = d;
+    document.getElementById("dur-monthly").classList.toggle("active", d === "monthly");
+    document.getElementById("dur-lifetime").classList.toggle("active", d === "lifetime");
+    update();
+  }
+
+  function currentUsd() {
+    const pair = PRICES[document.getElementById("rank").value];
+    return duration === "monthly" ? pair[0] : pair[1];
+  }
+
+  function currentLtc() { return (currentUsd() / LTC_USD_PRICE).toFixed(8); }
+
+  function update() {
+    const usd = currentUsd();
+    const ltc = currentLtc();
+    document.getElementById("total").innerHTML =
+      `${money()} <small>${priceSuffix()}</small>`;
+    document.getElementById("ltc-line").textContent =
+      `Send exactly ${ltc} LTC (rate: $${LTC_USD_PRICE.toFixed(2)} per LTC)`;
+    document.getElementById("address").textContent = LTC_ADDRESS;
+    document.getElementById("pay-amount").textContent = `Current price: ${ltc} LTC (${duration === "monthly" ? "1 month" : "lifetime"})`;
+    document.getElementById("pay-address").textContent = LTC_ADDRESS;
+    document.getElementById("qr").src =
+      `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`litecoin:${LTC_ADDRESS}?amount=${ltc}`)}`;
+  }
+
+  function status(msg) { document.getElementById("status").textContent = msg; }
+
+  function copyText(text, okMsg) {
+    navigator.clipboard.writeText(text)
+      .then(() => status(okMsg))
+      .catch(() => status("Copy failed. Select the text and copy it manually."));
+  }
+
+  function copyOrder() {
+    const ign = document.getElementById("ign").value.trim();
+    const txid = document.getElementById("txid").value.trim();
+    if (!ign) return status("Enter your Minecraft username first.");
+    if (!txid) return status("Paste your TXID first, then copy the order message.");
+    const value = document.getElementById("rank").value;
+    const rank = ITEM_NAMES[value];
+    copyText(`Order: ${rank}${ONE_OFF(value) ? "" : " rank (" + duration + ")"} | IGN: ${ign} | Amount: ${currentLtc()} LTC | TXID: ${txid}`,
+      "Order message copied. Paste it into your Discord ticket. Your rank is added after our team verifies the payment.");
+  }
+
+  // Background bubbles
+  const bg = document.getElementById("page-bg");
+  for (let i = 0; i < 22; i++) {
+    const b = document.createElement("div");
+    b.className = "bubble";
+    const s = 6 + Math.random() * 20;
+    b.style.width = s + "px"; b.style.height = s + "px";
+    b.style.left = (Math.random() * 100) + "%";
+    b.style.animationDuration = (12 + Math.random() * 14) + "s";
+    b.style.animationDelay = (-Math.random() * 20) + "s";
+    bg.appendChild(b);
+  }
+
+  renderRanks();
+  update();
+</script>
+</body>
+</html>
